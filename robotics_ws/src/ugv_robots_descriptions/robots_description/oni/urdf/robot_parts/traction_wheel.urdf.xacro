@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="oni">
+    <xacro:property name="left_wheel" value="file:///$(find ugv_robots_descriptions)/robots_description/oni/meshes/fl_wheel.dae"/>
+    <xacro:property name="right_wheel" value="file:///$(find ugv_robots_descriptions)/robots_description/oni/meshes/fr_wheel.dae"/>
+
+    <xacro:property name="wheel_radius" value="0.033"/>
+    <xacro:property name="wheel_width" value="0.026"/>
+    <xacro:property name="wheel_xoff" value="0.05"/>
+    <xacro:property name="wheel_yoff" value="0.085"/>
+    <xacro:property name="wheel_zoff" value="-0.014"/>
+    <xacro:property name="wheel_mass" value="0.4"/>
+
+    <xacro:macro name="mecanum_wheel_link" params="side x_reflect y_reflect orientation_z mesh">
+        <link name="${side}_wheel_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 ${orientation_z}"/>
+            <geometry>
+            <mesh filename="${mesh}"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+            <geometry>
+                <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="${wheel_mass}"/>
+            <inertia ixx="${(2/5) * wheel_mass * (wheel_radius * wheel_radius)}" ixy="0" ixz="0"
+                    iyy="${(2/5) * wheel_mass * (wheel_radius * wheel_radius)}" iyz="0"
+                    izz="${(2/5) * wheel_mass * (wheel_radius * wheel_radius)}" />
+        </inertial>
+        </link>
+
+        <gazebo reference="${side}_wheel_link">
+            <selfCollide>false</selfCollide>
+            <mu1>0.03</mu1>
+            <mu2>0.03</mu2>
+            <kp>1000000.0</kp>
+            <kd>100.0</kd>
+        </gazebo>
+
+        <joint name="${side}_wheel_to_base_link" type="continuous">
+            <axis xyz="0 1 0" />
+            <parent link="base_link"/>
+            <child link="${side}_wheel_link"/>
+            <origin xyz="${x_reflect * wheel_xoff} ${y_reflect * wheel_yoff} ${wheel_zoff}" rpy="0 0 0"/>
+        </joint>
+    </xacro:macro>
+    
+    <xacro:mecanum_wheel_link
+        side="front_right"
+        x_reflect="1"
+        y_reflect="-1"    
+        orientation_z="${pi/2}"
+        mesh="${right_wheel}"
+    />
+
+    <xacro:mecanum_wheel_link
+        side="front_left"
+        x_reflect="1"
+        y_reflect="1"  
+        orientation_z="${-pi/2}"
+        mesh="${left_wheel}"
+    />
+
+    <xacro:mecanum_wheel_link
+        side="back_right"
+        x_reflect="-1"
+        y_reflect="-1"  
+        orientation_z="${pi/2}"
+        mesh="${right_wheel}"
+    />
+
+    <xacro:mecanum_wheel_link
+        side="back_left"
+        x_reflect="-1"
+        y_reflect="1"  
+        orientation_z="${-pi/2}"
+        mesh="${left_wheel}"
+    />
+</robot>
