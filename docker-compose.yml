@@ -1,0 +1,58 @@
+version: '2.4'
+
+services:
+  explore:
+    # Autonomous exploration node
+    container_name: explore
+    build: .
+    command: ros2 launch explore_lite explore.launch.py
+    env_file:
+      - environment.env
+    volumes:
+      - xplorervolume:/workspaces
+  ## network_mode and ipc required for integration with real robot (UNIX only)
+  # network_mode: host
+  # ipc: host
+
+  # rostcp:
+  #   # ROS-Unity integration node
+  #   container_name: rostcp
+  #   build: .
+  #   command: ros2 run ros_tcp_endpoint default_server_endpoint --ros-args -p ROS_IP:=0.0.0.0
+  #   env_file:
+  #     - environment.env
+  #   volumes:
+  #     - xplorervolume:/workspaces
+  #   ports:
+  #     - "10000:10000"
+  #     - "5005:5005"
+  ## network_mode and ipc required for integration with real robot (UNIX only)
+  # network_mode: host
+  # ipc: host
+
+  bringup:
+    # SLAM, Localization, Navigation
+    container_name: bringup
+    build: .
+    command: ros2 launch ugv_simulation l1br_laserworld.launch.py slam:=True use_sim_time:=True
+    privileged: true
+    env_file:
+      - environment.env
+    volumes:
+      - xplorervolume:/workspaces
+      - /tmp/.X11-unix:/tmp/.X11-unix
+
+  gazebo:
+    # Gazebo simulation with Laser World + L1BR Spawn + Twist Mux + rviz nodes
+    container_name: gazebo
+    build: .
+    command: ros2 launch ugv_simulation l1br_laserworld.launch.py use_sim_time:=True
+    privileged: true
+    env_file:
+      - environment.env
+    volumes:
+      - xplorervolume:/workspaces
+      - /tmp/.X11-unix:/tmp/.X11-unix
+
+volumes:
+  xplorervolume: # Fixes Linux + Docker GUI problems
