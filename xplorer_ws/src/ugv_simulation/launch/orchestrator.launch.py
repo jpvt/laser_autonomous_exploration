@@ -1,32 +1,22 @@
 import os
 
-from ament_index_python.packages import get_package_share_path, get_package_share_directory
+from ament_index_python.packages import get_package_share_path, get_package_share_directory, get_package_prefix
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.actions import ExecuteProcess
-from launch.conditions import IfCondition , UnlessCondition
-from launch.substitutions import LaunchConfiguration, Command
-from ament_index_python.packages import get_package_prefix
-from launch_ros.parameter_descriptions import ParameterValue
-from launch.actions import RegisterEventHandler
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, RegisterEventHandler, GroupAction, SetEnvironmentVariable
+from launch.conditions import IfCondition, UnlessCondition
+from launch.substitutions import LaunchConfiguration, Command, PythonExpression
 from launch.event_handlers import OnProcessExit
 
-from launch_ros.actions import Node
-
-
-from launch.actions import GroupAction, SetEnvironmentVariable
-from launch.substitutions import PythonExpression
-from launch_ros.actions import LoadComposableNodes
+from launch_ros.actions import Node, LoadComposableNodes
 from launch_ros.descriptions import ComposableNode
+from launch_ros.parameter_descriptions import ParameterValue
+
 from nav2_common.launch import RewrittenYaml
 
-
-
-
 def generate_launch_description():
-    
-    # Laser World Launch
+
+    # Setup Gazebo variables
     ugv_simulation_path = get_package_share_path("ugv_simulation")
     world_gazebo_path = ugv_simulation_path / "worlds/laser.world"
     install_dir = get_package_prefix("ugv_simulation")
@@ -55,7 +45,6 @@ def generate_launch_description():
         output='screen'
     )
 
-    # L1BR Launch
     ugv_robots_description_path = get_package_share_path("ugv_robots_descriptions")
     model_l1br_path = ugv_robots_description_path / "robots_description/l1br/urdf/l1br.urdf.xacro"
     rviz_config_path = ugv_robots_description_path / "rviz/default.rviz"
@@ -139,13 +128,6 @@ def generate_launch_description():
         arguments=["joint_broad"],
     )
 
-    # Code for delaying a node (I haven't tested how effective it is)
-    # 
-    # First add the below lines to imports
-    # from launch.actions import RegisterEventHandler
-    # from launch.event_handlers import OnProcessExit
-    #
-    # Then add the following below the current diff_drive_spawner
     delayed_diff_drive_spawner = RegisterEventHandler(
         event_handler=OnProcessExit(
             target_action=gazebo,
@@ -159,8 +141,6 @@ def generate_launch_description():
             on_exit=[joint_broad_spawner],
         )
     )
-    #
-    # Replace the diff_drive_spawner in the final return with delayed_diff_drive_spawner
 
     # SLAM Node
     start_async_slam_toolbox_node = Node(
@@ -181,18 +161,6 @@ def generate_launch_description():
     )
 
     # Navigation Node
-    bringup_dir = get_package_share_directory('ugv_simulation')
-
-    namespace = LaunchConfiguration('namespace')
-    use_sim_time = LaunchConfiguration('use_sim_time')
-    autostart = LaunchConfiguration('autostart')
-    params_file = LaunchConfiguration('params_file')
-    use_composition = LaunchConfiguration('use_composition')
-    container_name = LaunchConfiguration('container_name')
-    container_name_full = (namespace, '/', container_name)
-    use_respawn = LaunchConfiguration('use_respawn')
-    log_level = LaunchConfiguration('log_level')
-
     lifecycle_nodes = ['controller_server',
                        'smoother_server',
                        'planner_server',
@@ -206,12 +174,12 @@ def generate_launch_description():
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
-        'use_sim_time': use_sim_time,
-        'autostart': autostart}
+        'use_sim_time': LaunchConfiguration('use_sim_time'),
+        'autostart': LaunchConfiguration('autostart')}
 
     configured_params = RewrittenYaml(
-            source_file=params_file,
-            root_key=namespace,
+            source_file=LaunchConfiguration('params_file'),
+            root_key=LaunchConfiguration('namespace'),
             param_rewrites=param_substitutions,
             convert_types=True)
 
@@ -230,7 +198,7 @@ def generate_launch_description():
 
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
-        default_value=os.path.join(bringup_dir, 'config', 'nav2_params.yaml'),
+        default_value=os.path.join(get_package_share_directory('ugv_simulation'), 'config', 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     declare_autostart_cmd = DeclareLaunchArgument(
@@ -260,70 +228,70 @@ def generate_launch_description():
                 package='nav2_controller',
                 executable='controller_server',
                 output='screen',
-                respawn=use_respawn,
+                respawn=LaunchConfiguration('use_respawn'),
                 respawn_delay=2.0,
                 parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
+                arguments=['--ros-args', '--log-level', LaunchConfiguration('log_level')],
                 remappings=remappings + [('cmd_vel', 'cmd_vel_nav')]),
             Node(
                 package='nav2_smoother',
                 executable='smoother_server',
                 name='smoother_server',
                 output='screen',
-                respawn=use_respawn,
+                respawn=LaunchConfiguration('use_respawn'),
                 respawn_delay=2.0,
                 parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
+                arguments=['--ros-args', '--log-level', LaunchConfiguration('log_level')],
                 remappings=remappings),
             Node(
                 package='nav2_planner',
                 executable='planner_server',
                 name='planner_server',
                 output='screen',
-                respawn=use_respawn,
+                respawn=LaunchConfiguration('use_respawn'),
                 respawn_delay=2.0,
                 parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
+                arguments=['--ros-args', '--log-level', LaunchConfiguration('log_level')],
                 remappings=remappings),
             Node(
                 package='nav2_behaviors',
                 executable='behavior_server',
                 name='behavior_server',
                 output='screen',
-                respawn=use_respawn,
+                respawn=LaunchConfiguration('use_respawn'),
                 respawn_delay=2.0,
                 parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
+                arguments=['--ros-args', '--log-level', LaunchConfiguration('log_level')],
                 remappings=remappings),
             Node(
                 package='nav2_bt_navigator',
                 executable='bt_navigator',
                 name='bt_navigator',
                 output='screen',
-                respawn=use_respawn,
+                respawn=LaunchConfiguration('use_respawn'),
                 respawn_delay=2.0,
                 parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
+                arguments=['--ros-args', '--log-level', LaunchConfiguration('log_level')],
                 remappings=remappings),
             Node(
                 package='nav2_waypoint_follower',
                 executable='waypoint_follower',
                 name='waypoint_follower',
                 output='screen',
-                respawn=use_respawn,
+                respawn=LaunchConfiguration('use_respawn'),
                 respawn_delay=2.0,
                 parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
+                arguments=['--ros-args', '--log-level', LaunchConfiguration('log_level')],
                 remappings=remappings),
             Node(
                 package='nav2_velocity_smoother',
                 executable='velocity_smoother',
                 name='velocity_smoother',
                 output='screen',
-                respawn=use_respawn,
+                respawn=LaunchConfiguration('use_respawn'),
                 respawn_delay=2.0,
                 parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
+                arguments=['--ros-args', '--log-level', LaunchConfiguration('log_level')],
                 remappings=remappings +
                         [('cmd_vel', 'cmd_vel_nav'), ('cmd_vel_smoothed', 'cmd_vel')]),
             Node(
@@ -331,16 +299,16 @@ def generate_launch_description():
                 executable='lifecycle_manager',
                 name='lifecycle_manager_navigation',
                 output='screen',
-                arguments=['--ros-args', '--log-level', log_level],
-                parameters=[{'use_sim_time': use_sim_time},
-                            {'autostart': autostart},
+                arguments=['--ros-args', '--log-level', LaunchConfiguration('log_level')],
+                parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')},
+                            {'autostart': LaunchConfiguration('autostart')},
                             {'node_names': lifecycle_nodes}]),
         ]
     )
 
     load_composable_nodes = LoadComposableNodes(
         condition=IfCondition(LaunchConfiguration("use_composition")),
-        target_container=container_name_full,
+        target_container=(LaunchConfiguration('namespace'), '/', LaunchConfiguration('container_name')),
         composable_node_descriptions=[
             ComposableNode(
                 package='nav2_controller',
@@ -389,8 +357,8 @@ def generate_launch_description():
                 package='nav2_lifecycle_manager',
                 plugin='nav2_lifecycle_manager::LifecycleManager',
                 name='lifecycle_manager_navigation',
-                parameters=[{'use_sim_time': use_sim_time,
-                             'autostart': autostart,
+                parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time'),
+                             'autostart': LaunchConfiguration('autostart'),
                              'node_names': lifecycle_nodes}]),
         ],
     )
@@ -417,9 +385,9 @@ def generate_launch_description():
     explore_node = Node(
         package="explore_lite",
         name="explore_node",
-        namespace=namespace,
+        namespace=LaunchConfiguration('namespace'),
         executable="explore",
-        parameters=[config, {"use_sim_time": use_sim_time}],
+        parameters=[config, {"use_sim_time": LaunchConfiguration('use_sim_time')}],
         output="screen",
         remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
     )
@@ -431,13 +399,10 @@ def generate_launch_description():
         )
     )
 
-
     return LaunchDescription([
-        # Laser World
+        # Laser World + L1BR + RViz + twist_mux
         world_gazebo_arg ,
         gazebo_launch ,
-
-        # L1BR
         model_arg ,
         twist_mux,
         rviz_config_arg ,
@@ -448,15 +413,15 @@ def generate_launch_description():
         rviz ,
         gazebo ,
         robot_localization_node ,
-        #diff_drive_spawner ,
         delayed_diff_drive_spawner,
-        #joint_broad_spawner ,
         delayed_joint_broad_spawner,
         robot_state_publisher_node ,
         joint_state_publisher_node ,
         joint_state_publisher_gui_node ,
+
         #SLAM
         delayed_start_async_slam_toolbox_node,
+
         # Navigation
         ## Set environment variables
         stdout_linebuf_envvar,
@@ -472,6 +437,7 @@ def generate_launch_description():
         ## Add the actions to launch all of the navigation nodes
         delayed_load_nodes,
         delayed_load_composable_nodes,
+
         # Explore Frontiers
         delayed_explore_node
     ]) 
