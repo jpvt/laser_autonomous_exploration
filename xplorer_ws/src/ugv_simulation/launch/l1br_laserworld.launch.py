@@ -9,6 +9,8 @@ from launch.conditions import IfCondition , UnlessCondition
 from launch.substitutions import LaunchConfiguration, Command
 from ament_index_python.packages import get_package_prefix
 from launch_ros.parameter_descriptions import ParameterValue
+from launch.actions import RegisterEventHandler
+from launch.event_handlers import OnProcessExit
 
 from launch_ros.actions import Node
 
@@ -92,7 +94,7 @@ def generate_launch_description():
         executable="spawn_entity.py" ,
         name="spawn_l1br" ,  
         output="screen" ,
-        arguments= ["-topic", "/robot_description", "-entity", "l1br", "-z", "0.03", "-x", "4", "-y", "4"] ,
+        arguments= ["-topic", "/robot_description", "-entity", "l1br", "-z", "0.03", "-x", "2", "-y", "2", "-timeout", "360"] ,
     )
     
     robot_localization_node = Node(
@@ -123,6 +125,29 @@ def generate_launch_description():
         arguments=["joint_broad"],
     )
 
+    # Code for delaying a node (I haven't tested how effective it is)
+    # 
+    # First add the below lines to imports
+    # from launch.actions import RegisterEventHandler
+    # from launch.event_handlers import OnProcessExit
+    #
+    # Then add the following below the current diff_drive_spawner
+    delayed_diff_drive_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=gazebo,
+            on_exit=[diff_drive_spawner],
+        )
+    )
+
+    delayed_joint_broad_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=gazebo,
+            on_exit=[joint_broad_spawner],
+        )
+    )
+    #
+    # Replace the diff_drive_spawner in the final return with delayed_diff_drive_spawner
+
 
     return LaunchDescription([
         # Laser World
@@ -139,8 +164,10 @@ def generate_launch_description():
         rviz ,
         gazebo ,
         robot_localization_node ,
-        diff_drive_spawner ,
-        joint_broad_spawner ,
+        #diff_drive_spawner ,
+        delayed_diff_drive_spawner,
+        #joint_broad_spawner ,
+        delayed_joint_broad_spawner,
         robot_state_publisher_node ,
         joint_state_publisher_node ,
         joint_state_publisher_gui_node ,
