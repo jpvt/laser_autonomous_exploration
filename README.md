@@ -5,7 +5,7 @@ Autonomous exploration of Laser-Robotics Lab at UFPB using Turtlebot3 and L1BR
 
 ## Requirements
 
-* Docker (and docker-compose): recommended to install Docker Desktop
+* Docker (and docker-compose): recommended to install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
 ---
 
@@ -19,28 +19,46 @@ sudo gpasswd -a $USER docker
 newgrp docker
 ```
 
-Run the following command:
+Make sure your docker is initialized before proceeding and your nvidia driver is installed.
 
+### Setting up NVIDIA Container Toolkit
+Setup the package repository and the GPG key:
 ```bash
-xhost +local:`docker inspect --format='{{ .Config.Hostname }}' gazebo`
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID) \
+      && curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+      && curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
+            sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+            sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
 ```
 
-**IMPORTANT:** This command is required on every reboot.
-
-In the `environment.env` file, check if `DISPLAY` is correct by opening a terminal and running:
-
+Install the nvidia-container-toolkit package (and dependencies) after updating the package listing:
 ```bash
-echo $DISPLAY
+sudo apt-get update
 ```
 
-Write the result to `DISPLAY` (normally, it's either `:0` or `:1`). Now you're ready to run the project!
+```bash
+sudo apt-get install -y nvidia-container-toolkit
+```
 
-**Note:** If the project still doesn't work, you might need to install [Nvidia Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#setting-up-nvidia-container-toolkit), then run the following:
+Configure the Docker daemon to recognize the NVIDIA Container Runtime:
 
 ```bash
+sudo nvidia-ctk runtime configure --runtime=docker
+```
+
+Restart the Docker daemon to complete the installation after setting the default runtime:
+
+```bash
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl daemon-reload && sudo systemctl restart docker
 sudo apt-get update
 sudo apt-get install -y nvidia-docker2
 sudo systemctl restart docker
+```
+
+At this point, a working setup can be tested by running a base CUDA container:
+```bash
+sudo docker run --rm --runtime=nvidia --gpus all nvidia/cuda:11.6.2-base-ubuntu20.04 nvidia-smi
 ```
 
 # Docker with GUIs
@@ -49,7 +67,7 @@ If you've done the first-time setup, remember to do the following on every syste
 
 - If on **Linux**, remember to run 
     ```bash
-    xhost +local:`docker inspect --format='{{ .Config.Hostname }}' gazebo`
+    xhost +local:docker && sudo docker compose up
     ```
     on every reboot.
 
