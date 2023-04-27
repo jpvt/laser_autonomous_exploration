@@ -16,7 +16,7 @@ services:
       - DISPLAY=${DISPLAY:?err}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
-    command: ros2 launch ugv_simulation l1br_laserworld.launch.py use_sim_time:=true
+    command: ros2 launch ugv_simulation orchestrator.launch.py use_sim_time:=true params_file:=xplorer_ws/src/ugv_simulation/config/nav2_params.yaml slam_params_file:=xplorer_ws/install/ugv_simulation/share/ugv_simulation/config/mapper_params_online_async.yaml
   
   # #SLAM Toolbox Node
   # mapping:
