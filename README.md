@@ -99,7 +99,7 @@ sudo docker compose down
 You can `docker exec` into any of the containers and run `ros2` commands from the get-go (sourcing is done automatically). For example, going into the `explore` container:
 
 ```bash
-sudo docker exec -it explore bash
+sudo docker exec -it laser_l1br bash
 ```
 
 **Resume exploration**
