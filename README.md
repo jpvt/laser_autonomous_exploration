@@ -116,7 +116,7 @@ This publishes a single message to the `/explore/resume` topic, toggling the exp
 
 ## **Acknowledgments**
 
-* [Gazebo and L1BR Simulation]() by LASER-Robotics Lab Team
+* [Gazebo and L1BR Simulation](https://github.com/LASER-Robotics/laser_ugv_system) by LASER-Robotics Lab Team
 * [SLAM Toolbox](https://github.com/SteveMacenski/slam_toolbox) by Steve Macenski
 * [Navigation2](https://navigation.ros.org/) by the ROS2 Navigation Working Group
 * [Explore Lite](https://github.com/robo-friends/m-explore-ros2) by Carlos Alvarez
