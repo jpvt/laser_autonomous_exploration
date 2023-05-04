@@ -1,7 +1,7 @@
 ARG ROS_DISTRO=humble
 ARG PREFIX=
 
-FROM husarnet/ros:${PREFIX}${ROS_DISTRO}-ros-core
+FROM husarion/webots:humble
 
 ARG PREFIX
 ENV USER=xplorer
@@ -33,6 +33,7 @@ RUN MYDISTRO=${PREFIX:-ros}; MYDISTRO=${MYDISTRO//-/} && \
         python3-colcon-common-extensions \
         python3-rosdep \
         python3-vcstool \
+        ros-humble-rmw-cyclonedds-cpp \
         ros-$ROS_DISTRO-teleop-twist-keyboard \
         ros-$ROS_DISTRO-twist-mux \
         ros-humble-navigation2 \

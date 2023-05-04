@@ -17,7 +17,7 @@
   <xacro:piston/>
     
   <xacro:imu_sensor
-    topic="/imu/data"
+    topic="/imu"
   />
 
   <xacro:laser_sensor
