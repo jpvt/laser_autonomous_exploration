@@ -8,6 +8,7 @@ services:
     runtime: nvidia
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - maps:/maps
     privileged: true
     network_mode: host
     ipc: host
@@ -16,5 +17,7 @@ services:
       - DISPLAY=${DISPLAY:?err}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
-    command: ros2 launch ugv_simulation orchestrator.launch.py use_sim_time:=true params_file:=xplorer_ws/src/ugv_simulation/config/nav2_params.yaml slam_params_file:=xplorer_ws/install/ugv_simulation/share/ugv_simulation/config/mapper_params_online_async.yaml
-  
+    command: ros2 launch ugv_simulation orchestrator.launch.py use_sim_time:=true params_file:=xplorer_ws/src/ugv_simulation/config/nav2_params.yaml slam_params_file:=xplorer_ws/install/ugv_simulation/share/ugv_simulation/config/mapper_params_online_async.yaml map_output_path:=/maps
+
+volumes:
+  maps:

@@ -62,6 +62,15 @@ We aim to minimize the time it takes for the L1BR robot to explore and map unkno
     sudo docker run --rm --runtime=nvidia --gpus all nvidia/cuda:11.6.2-base-ubuntu20.04 nvidia-smi
     ```
 
+### **Accessing Maps from the Container’s Volume**
+The generated maps from the simulation are saved to the `/maps` directory inside the `laser_l1br` container, which is mounted to the `maps` volume on the host machine. This allows you to persist the generated maps even after the container is stopped or removed.
+
+To access the maps from the container’s volume, you can use the `docker cp` command to copy the map files from the container to a directory on the host machine. For example, to copy all of the map files from the `/maps` directory inside the container to a directory called `my_maps` on the host machine, you can run the following command:
+
+```docker cp laser_l1br:/maps/. my_maps/```
+
+After running this command, you will be able to access the generated map files from the `my_maps` directory on your host machine.
+
 ### **Installation**
 
 **Note:** The current build is under development and it was only tested for Linux. In Windows, you may need to install other prerequisites. (Check the [Xplorer repo](https://github.com/Fabulani/xplorer) for some instructions on installing for windows)
