@@ -15,6 +15,7 @@ slam_toolbox:
     base_frame: base_footprint
     scan_topic: /scan
     mode: mapping #localization
+    map_file_name: "/maps/map.yaml"
 
     # if you'd like to immediately start continuing a map at a given pose
     # or at the dock, but they are mutually exclusive, if pose is given
